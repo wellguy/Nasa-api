@@ -11,14 +11,14 @@ public class NasaPost {
     private final String url;
 
     public NasaPost(
-                @JsonProperty("copyright") String copyright,
-                @JsonProperty("date") String date,
-                @JsonProperty("explanation") String explanation,
-                @JsonProperty("hdurl") String hdurl,
-                @JsonProperty("media_type") String media_type,
-                @JsonProperty("service_version") String service_version,
-                @JsonProperty("title") String title,
-                @JsonProperty("url") String url
+            @JsonProperty("copyright") String copyright,
+            @JsonProperty("date") String date,
+            @JsonProperty("explanation") String explanation,
+            @JsonProperty("hdurl") String hdurl,
+            @JsonProperty("media_type") String media_type,
+            @JsonProperty("service_version") String service_version,
+            @JsonProperty("title") String title,
+            @JsonProperty("url") String url
     ) {
         this.copyright = copyright;
         this.date = date;
@@ -33,6 +33,7 @@ public class NasaPost {
     public String getUrl() {
         return url;
     }
+
     public String getHDurl() {
         return hdurl;
     }

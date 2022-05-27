@@ -7,6 +7,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,7 +30,7 @@ public class Main {
 
         //объект запроса
         String api = "M4ZBehhq8o3f1Taatsp2k3n8tN8buw1nWGBRSaIy";
-        HttpGet requestBody = new HttpGet("https://api.nasa.gov/planetary/apod?api_key="+ api);
+        HttpGet requestBody = new HttpGet("https://api.nasa.gov/planetary/apod?api_key=" + api);
 
         //удаленный сервис
         CloseableHttpResponse responseBody = httpClient.execute(requestBody);
@@ -47,7 +48,7 @@ public class Main {
 
         //определяем имя файла
         String[] arr = imageUrl.split("/");
-        String fileName = arr[arr.length-1];   //последний элемент массива
+        String fileName = arr[arr.length - 1];   //последний элемент массива
 
         //создаем файл
         File fileImage = new File(fileName);
@@ -59,23 +60,19 @@ public class Main {
         HttpEntity entity = responseUrlImage.getEntity();
 
         if (entity != null) {
-            try(FileOutputStream fileOutputStream = new FileOutputStream(fileImage)) {
-                entity.writeTo(fileOutputStream);
-                System.out.println("Файл " + fileName + " создан");
+            try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileImage))) {
+                entity.writeTo(bufferedOutputStream);
+                System.out.println("\nФайл " + fileName + " создан");
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        } else {
+            System.out.println("\nФайл " + fileName + " не создан");
         }
 
         responseUrlImage.close();
-
         httpClient.close();
 
-
-
     }
-
-
-
 
 }
