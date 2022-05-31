@@ -15,64 +15,80 @@ import java.nio.charset.StandardCharsets;
 
 public class Main {
 
+    private static ObjectMapper mapper = new ObjectMapper();
 
-    public static ObjectMapper mapper = new ObjectMapper();
+    private static CloseableHttpClient httpClient = HttpClientBuilder.create()
+            .setDefaultRequestConfig(RequestConfig.custom()
+                    .setConnectTimeout(5000)    // РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёРµ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє СЃРµСЂРІРµСЂСѓ
+                    .setSocketTimeout(30000)    // РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С…
+                    .setRedirectsEnabled(false) // РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ СЃР»РµРґРѕРІР°С‚СЊ СЂРµРґРёСЂРµРєС‚Сѓ РІ РѕС‚РІРµС‚Рµ
+                    .build())
+            .build();
+    private static String api = "M4ZBehhq8o3f1Taatsp2k3n8tN8buw1nWGBRSaIy";
 
     public static void main(String[] args) throws IOException {
 
-        CloseableHttpClient httpClient = HttpClientBuilder.create()
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(5000)    // максимальное время ожидание подключения к серверу
-                        .setSocketTimeout(30000)    // максимальное время ожидания получения данных
-                        .setRedirectsEnabled(false) // возможность следовать редиректу в ответе
-                        .build())
-                .build();
-
-        //объект запроса
-        String api = "M4ZBehhq8o3f1Taatsp2k3n8tN8buw1nWGBRSaIy";
-        HttpGet requestBody = new HttpGet("https://api.nasa.gov/planetary/apod?api_key=" + api);
-
-        //удаленный сервис
-        CloseableHttpResponse responseBody = httpClient.execute(requestBody);
-
-        //Печать ответа
-        String body = new String(responseBody.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
-        //System.out.println(body);
-
-        //парсим из тела ответа объекта и печатаем
-        NasaPost post = mapper.readValue(body, NasaPost.class);
-        responseBody.close();
-
+        NasaPost post = queryNASA();
         //System.out.println(post);
+
         String imageUrl = post.getHDurl();
 
-        //определяем имя файла
+        //РѕРїСЂРµРґРµР»СЏРµРј РёРјСЏ С„Р°Р№Р»Р°
         String[] arr = imageUrl.split("/");
-        String fileName = arr[arr.length - 1];   //последний элемент массива
+        String fileName = arr[arr.length - 1];   //РїРѕСЃР»РµРґРЅРёР№ СЌР»РµРјРµРЅС‚ РјР°СЃСЃРёРІР°
 
-        //создаем файл
-        File fileImage = new File(fileName);
-        fileImage.createNewFile();
+        //Р·Р°РїСЂРѕСЃ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
+        queryImage(imageUrl, fileName);
 
-        //запрос изображения
-        HttpGet requestUrlImage = new HttpGet(imageUrl);
-        CloseableHttpResponse responseUrlImage = httpClient.execute(requestUrlImage);
-        HttpEntity entity = responseUrlImage.getEntity();
-
-        if (entity != null) {
-            try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileImage))) {
-                entity.writeTo(bufferedOutputStream);
-                System.out.println("\nФайл " + fileName + " создан");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("\nФайл " + fileName + " не создан");
-        }
-
-        responseUrlImage.close();
         httpClient.close();
 
     }
+
+    private static NasaPost queryNASA() {
+        //РѕР±СЉРµРєС‚ Р·Р°РїСЂРѕСЃР°
+        HttpGet requestBody = new HttpGet("https://api.nasa.gov/planetary/apod?api_key=" + api);
+        //СѓРґР°Р»РµРЅРЅС‹Р№ СЃРµСЂРІРёСЃ
+        try (CloseableHttpResponse responseBody = httpClient.execute(requestBody)) {
+            //РџРµС‡Р°С‚СЊ РѕС‚РІРµС‚Р°
+            String body = new String(responseBody.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
+            //System.out.println(body);
+            //РїР°СЂСЃРёРј РёР· С‚РµР»Р° РѕС‚РІРµС‚Р° РѕР±СЉРµРєС‚Р° Рё РїРµС‡Р°С‚Р°РµРј
+            return mapper.readValue(body, NasaPost.class);
+        } catch (IOException e) {
+            System.out.println("РќРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static void queryImage(String url, String fileName) {
+        //РѕР±СЉРµРєС‚ Р·Р°РїСЂРѕСЃР°
+        HttpGet requestUrlImage = new HttpGet(url);
+        //СѓРґР°Р»РµРЅРЅС‹Р№ СЃРµСЂРІРёСЃ
+        try (CloseableHttpResponse responseUrlImage = httpClient.execute(requestUrlImage);) {
+            HttpEntity entity = responseUrlImage.getEntity();
+
+            //СЃРѕР·РґР°РµРј С„Р°Р№Р»
+            File fileImage = new File(fileName);
+            fileImage.createNewFile();
+
+            if (entity != null) {
+                try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileImage))) {
+                    entity.writeTo(bufferedOutputStream);
+                    System.out.println("\nР¤Р°Р№Р» " + fileName + " СЃРѕР·РґР°РЅ");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("Р¤Р°Р№Р» РЅРµ СЃРѕР·РґР°РЅ");
+                }
+            } else {
+                System.out.println("\nР¤Р°Р№Р» " + fileName + " РЅРµ СЃРѕР·РґР°РЅ");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
 }
